@@ -62,27 +62,29 @@ st.markdown("""
         background-color: white !important;
         color: #000000 !important; /* --- TESTO NERO --- */
     }
-
-    /* --- CORREZIONE: Stile per st.data_editor (NON PIU' USATO, MA LASCIATO PER SICUREZZA) --- */
-    [data-testid="stDataEditor"] {
-        background-color: #FFFFFF !important; /* Sfondo bianco per la tabella */
-    }
-    /* Testo nero per le celle della tabella */
-    [data-testid="stDataEditor"] .rdg-cell {
-        color: #000000 !important;
-        background-color: #FFFFFF !important;
-    }
-    /* Testo nero per l'input di una cella in modifica */
-    [data-testid="stDataEditor"] input {
-        color: #000000 !important;
-        background-color: #FFFFFF !important;
-    }
     
     /* Eccezione per i box informativi (es. Orlando) */
     .st-emotion-cache-1wivapv {
         color: #0c4a6e !important; /* Mantiene il testo blu scuro per st.info */
     }
     
+    /* --- NUOVA REGOLA: Bottoni standard (es. "Aggiungi periodo") bianchi --- */
+    div[data-testid="stButton"] > button {
+        background-color: #FFFFFF !important; /* Sfondo bianco */
+        color: #000000 !important;        /* Testo nero */
+        border: 1px solid #CCCCCC !important; /* Bordo grigio chiaro */
+    }
+
+    /* --- NUOVA REGOLA: Checkbox bianchi --- */
+    div[data-testid="stCheckbox"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #CCCCCC !important;
+        padding-left: 10px; /* Aggiunge un po' di spazio */
+        border-radius: 8px; /* Angoli arrotondati */
+        padding-top: 5px; /* Spazio sopra */
+        padding-bottom: 5px; /* Spazio sotto */
+    }
+
     /* Allinea il pulsante di rimozione ❌ */
     .st-emotion-cache-1cflm81 {
         padding-top: 29px;
