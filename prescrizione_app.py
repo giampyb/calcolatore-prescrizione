@@ -25,11 +25,11 @@ st.markdown("""
     /* Stili per tema chiaro (rimossi quelli dark) */
     .box-ordinaria {
         background-color: #fed7aa; /* Arancio Chiaro */
-        color: #333;
+        color: #000000; /* --- TESTO NERO --- */
     }
     .box-massima {
         background-color: #bbf7d0; /* Verde Chiaro */
-        color: #333;
+        color: #000000; /* --- TESTO NERO --- */
     }
     
     .box-ordinaria, .box-massima {
@@ -39,12 +39,14 @@ st.markdown("""
     .big-date { font-size: 24px; font-weight: bold; display: block; }
     .label-result { font-size: 16px; font-weight: 600; }
     
-    /* Forza sfondo BEIGE */
+    /* Forza sfondo BEIGE e TESTO NERO GLOBALE */
     .stApp {
         background-color: #F5F5DC !important; /* Beige */
+        color: #000000 !important; /* TESTO NERO */
     }
     body[data-theme="dark"] .stApp {
         background-color: #F5F5DC !important; /* Beige */
+        color: #000000 !important; /* TESTO NERO */
     }
 
     /* Sfondo BIANCO e Testo NERO per i widget di input */
