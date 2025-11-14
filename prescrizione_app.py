@@ -4,33 +4,42 @@ from dateutil.relativedelta import relativedelta
 import math
 
 # --- Configurazione Pagina ---
-# Forziamo il tema "light" (chiaro)
-st.set_page_config(page_title="Calcolatore Prescrizione", layout="centered", initial_sidebar_state="auto") 
+# NOTA: Rimosso 'initial_sidebar_state' errato. Il tema (chiaro/scuro)
+# si adatterà automaticamente alle impostazioni del tuo sistema (Mac/telefono).
+st.set_page_config(page_title="Calcolatore Prescrizione", layout="centered")
 
 # Stile CSS personalizzato
 st.markdown("""
     <style>
-    /* Nasconde il bottone del deploy e il footer di Streamlit */
+    .reportview-container { margin-top: -2em; }
     .stDeployButton {display:none;}
     footer {visibility: hidden;}
-    
-    /* Stile per il disclaimer personalizzato */
     .footer-disclaimer {
         position: fixed; left: 0; bottom: 0; width: 100%;
-        background-color: #f0f2f6; /* Sfondo chiaro per tema light */
-        color: #555; text-align: center;
+        background-color: #f0f2f6; color: #555; text-align: center;
         padding: 10px; font-size: 12px; border-top: 1px solid #ccc;
     }
-    /* Box risultati con colori chiari */
-    .box-ordinaria {
+    /* Stili per tema chiaro (background-color) */
+    body[data-theme="light"] .box-ordinaria {
         background-color: #fed7aa; /* Arancio Chiaro */
-        padding: 15px; border-radius: 10px; text-align: center;
-        color: #333; margin-bottom: 10px;
+        color: #333;
     }
-    .box-massima {
+    body[data-theme="light"] .box-massima {
         background-color: #bbf7d0; /* Verde Chiaro */
+        color: #333;
+    }
+    /* Stili per tema scuro (background-color) */
+    body[data-theme="dark"] .box-ordinaria {
+        background-color: #9a3412; /* Arancio Scuro */
+        color: #fff;
+    }
+    body[data-theme="dark"] .box-massima {
+        background-color: #166534; /* Verde Scuro */
+        color: #fff;
+    }
+    .box-ordinaria, .box-massima {
         padding: 15px; border-radius: 10px; text-align: center;
-        color: #333; margin-bottom: 10px;
+        margin-bottom: 10px;
     }
     .big-date { font-size: 24px; font-weight: bold; display: block; }
     .label-result { font-size: 16px; font-weight: 600; }
@@ -44,9 +53,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1. Pena Edittale")
-    # Logica per sincronizzare slider e campo numerico
     if 'pena_anni' not in st.session_state: st.session_state.pena_anni = 6
-    if 'slider_key' not in st.session_state: st.session_state.slider_key = 6
 
     def update_slider(): st.session_state.pena_anni = st.session_state.slider_key
     def update_number(): st.session_state.slider_key = st.session_state.pena_anni
@@ -99,22 +106,24 @@ with sosp_col1:
     end_orl = date(2019, 12, 31)
     if start_orl <= data_commissione <= end_orl:
         orlando_days = 548
-        # Sintassi retrocompatibile (senza f-string)
         st.markdown("""<div style="background-color:#e0f2fe; padding:10px; border-radius:5px; font-size:12px; color:#0c4a6e;">
         <b>Regime Orlando Attivo:</b><br>Applicati +1.5 anni (548gg) automatici.</div>""", unsafe_allow_html=True)
 
 with sosp_col2:
     st.write("Periodi Manuali (Aggiungi righe)")
-    # data_editor è un componente moderno di Streamlit
+    
+    # --- ECCO LA CORREZIONE ---
+    # Inizializzato con una lista vuota [] invece di [{}]
+    # Questo permette a st.data_editor di mostrare il pulsante "+" per aggiungere righe.
     edited_df = st.data_editor(
-        [{}], 
+        [],  # CORREZIONE APPLICATA QUI
         column_config={
             "Inizio": st.column_config.DateColumn("Data Inizio", format="DD/MM/YYYY"),
             "Fine": st.column_config.DateColumn("Data Fine", format="DD/MM/YYYY"),
         },
         num_rows="dynamic",
         hide_index=True,
-        key="sospensioni_manuali"
+        key="sospensioni_manuali" # Aggiunta una chiave per stabilità
     )
 
 # --- LOGICA DI CALCOLO ---
@@ -123,61 +132,50 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
     logs = []
     
     pena_base_mesi = (pena_anni * 12) + pena_mesi
-    # Sintassi .format() per retrocompatibilità
     logs.append("Pena edittale base: {} mesi".format(pena_base_mesi))
 
-    # PASSO 2: Aumento per Aggravanti Effetto Speciale (Cass. 3391/2015)
-    # Questa logica deve essere eseguita prima del tentativo
     if cap_val == 1.5:
         aumento = math.ceil(pena_base_mesi * 0.5)
         pena_base_mesi += aumento
         logs.append("Aumento Recidiva (+1/2) su base: +{} mesi -> Nuova base: {}".format(aumento, pena_base_mesi))
-    elif 1.6 < cap_val < 1.7: # Controllo per 2/3
+    elif 1.6 < cap_val < 1.7:
         aumento = math.ceil(pena_base_mesi * (2/3))
         pena_base_mesi += aumento
         logs.append("Aumento Recidiva (+2/3) su base: +{} mesi -> Nuova base: {}".format(aumento, pena_base_mesi))
     elif cap_val == 2.0:
-        aumento = pena_base_mesi # Raddoppio
+        aumento = pena_base_mesi
         pena_base_mesi += aumento
         logs.append("Aumento Abitualità (+100%) su base: +{} mesi -> Nuova base: {}".format(aumento, pena_base_mesi))
-    else:
-        logs.append("Nessun aumento per aggravanti ad effetto speciale sulla pena base.")
 
-
-    # PASSO 3: Reato Tentato
     if is_tentato:
         riduzione = math.ceil(pena_base_mesi / 3)
         pena_base_mesi -= riduzione
         logs.append("Riduzione Tentativo (-1/3): -{} mesi -> Nuova base: {}".format(riduzione, pena_base_mesi))
 
-    # PASSO 4: Minimi Edittali
     term_ordinario = pena_base_mesi
     minimo_mesi = minimo_edittale * 12
     if term_ordinario < minimo_mesi:
         term_ordinario = minimo_mesi
         logs.append("Applicazione Minimo Edittale ({} anni): Termine portato a {} mesi".format(minimo_edittale, term_ordinario))
     
-    # PASSO 5: Raddoppio Termini
     if is_raddoppio:
         term_ordinario *= 2
         logs.append("Raddoppio Termini: {} mesi".format(term_ordinario))
 
     giorni_sosp = 0
     
-    # Sospensioni manuali
     manual_days = 0
-    for row in edited_df: # Itera sulle righe aggiunte
+    # Assicurati di usare la chiave corretta se l'hai aggiunta
+    for row in edited_df: # Usa la variabile dell'editor
         d_start = row.get("Inizio")
         d_end = row.get("Fine")
-        # Assicurati che le date siano oggetti date validi
-        if isinstance(d_start, date) and isinstance(d_end, date) and d_end > d_start:
+        if d_start and d_end and isinstance(d_start, date) and isinstance(d_end, date) and d_end > d_start:
             delta = (d_end - d_start).days
             manual_days += delta
             logs.append("Sosp. Manuale {} - {}: {} giorni".format(d_start.strftime('%d/%m/%Y'), d_end.strftime('%d/%m/%Y'), delta))
     
     giorni_sosp += manual_days
     
-    # Sospensioni automatiche
     if is_covid: 
         giorni_sosp += 64
         logs.append("Sospensione COVID: +64 giorni")
@@ -188,15 +186,13 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
 
     logs.append("<b>TOTALE SOSPENSIONI: {} giorni</b>".format(giorni_sosp))
 
-    # Calcolo data ORDINARIA
     start_ord = data_interruzione if (has_interruzione and data_interruzione) else data_commissione
-    data_ord_base = start_ord + relativedelta(months=int(term_ordinario))
-    data_ord_finale = data_ord_base + timedelta(days=int(giorni_sosp))
+    data_ord_base = start_ord + relativedelta(months=term_ordinario)
+    data_ord_finale = data_ord_base + timedelta(days=giorni_sosp)
     
-    # Calcolo data MASSIMA
     term_max_mesi = math.ceil(term_ordinario * cap_val)
-    data_max_base = data_commissione + relativedelta(months=int(term_max_mesi))
-    data_max_finale = data_max_base + timedelta(days=int(giorni_sosp))
+    data_max_base = data_commissione + relativedelta(months=term_max_mesi)
+    data_max_finale = data_max_base + timedelta(days=giorni_sosp)
 
     st.markdown("---")
     res_col1, res_col2 = st.columns(2)
@@ -223,5 +219,4 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
         for log in logs:
             st.markdown("- {}".format(log), unsafe_allow_html=True)
 
-# Footer/Disclaimer
 st.markdown('<div class="footer-disclaimer">App realizzata dal dr. Giampiero Borraccia con Gemini AI</div>', unsafe_allow_html=True)
