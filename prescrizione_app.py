@@ -18,7 +18,8 @@ st.markdown("""
     footer {visibility: hidden;}
     .footer-disclaimer {
         position: fixed; left: 0; bottom: 0; width: 100%;
-        background-color: #f0f2f6; color: #555; text-align: center;
+        background-color: #f0f2f6; color: #000000; /* TESTO NERO */
+        text-align: center;
         padding: 10px; font-size: 12px; border-top: 1px solid #ccc;
     }
     
@@ -40,13 +41,14 @@ st.markdown("""
     .label-result { font-size: 16px; font-weight: 600; }
     
     /* Forza sfondo BEIGE e TESTO NERO GLOBALE */
-    .stApp {
+    body, .stApp {
         background-color: #F5F5DC !important; /* Beige */
         color: #000000 !important; /* TESTO NERO */
     }
-    body[data-theme="dark"] .stApp {
-        background-color: #F5F5DC !important; /* Beige */
-        color: #000000 !important; /* TESTO NERO */
+    
+    /* --- NUOVA REGOLA: Forza testo nero su tutti gli elementi comuni --- */
+    h1, h2, h3, h4, h5, h6, label, span, p, .st-emotion-cache-1jic0ts p {
+        color: #000000 !important;
     }
 
     /* Sfondo BIANCO e Testo NERO per i widget di input */
@@ -74,6 +76,11 @@ st.markdown("""
     [data-testid="stDataEditor"] input {
         color: #000000 !important;
         background-color: #FFFFFF !important;
+    }
+    
+    /* Eccezione per i box informativi (es. Orlando) */
+    .st-emotion-cache-1wivapv {
+        color: #0c4a6e !important; /* Mantiene il testo blu scuro per st.info */
     }
     </style>
     """, unsafe_allow_html=True)
