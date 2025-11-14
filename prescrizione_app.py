@@ -63,7 +63,7 @@ st.markdown("""
         color: #000000 !important; /* --- TESTO NERO --- */
     }
 
-    /* --- CORREZIONE: Stile per st.data_editor --- */
+    /* --- CORREZIONE: Stile per st.data_editor (NON PIU' USATO, MA LASCIATO PER SICUREZZA) --- */
     [data-testid="stDataEditor"] {
         background-color: #FFFFFF !important; /* Sfondo bianco per la tabella */
     }
@@ -82,10 +82,21 @@ st.markdown("""
     .st-emotion-cache-1wivapv {
         color: #0c4a6e !important; /* Mantiene il testo blu scuro per st.info */
     }
+    
+    /* Allinea il pulsante di rimozione ❌ */
+    .st-emotion-cache-1cflm81 {
+        padding-top: 29px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("⚖️ Calcolatore Prescrizione Reati")
+
+# --- Inizializza session_state per sospensioni ---
+if 'active_periods' not in st.session_state:
+    st.session_state.active_periods = []
+if 'last_period_id' not in st.session_state:
+    st.session_state.last_period_id = 0
 
 # --- COLONNE INPUT ---
 col1, col2 = st.columns(2)
@@ -149,27 +160,37 @@ with sosp_col1:
         <b>Regime Orlando Attivo:</b><br>Applicati +1.5 anni (548gg) automatici.</div>""", unsafe_allow_html=True)
 
 with sosp_col2:
-    st.write("Periodi Manuali (Aggiungi righe)")
+    st.write("Periodi Manuali")
     
-    # --- CORREZIONE BUG CALENDARIO: Inizializza un DataFrame vuoto ma CON I TIPI CORRETTI ---
-    if 'sospensioni_df' not in st.session_state:
-        st.session_state.sospensioni_df = pd.DataFrame(
-            columns=["Inizio", "Fine"]
-        ).astype({"Inizio": "datetime64[ns]", "Fine": "datetime64[ns]"})
+    # Pulsante per aggiungere nuovi periodi
+    if st.button("Aggiungi periodo"):
+        new_id = st.session_state.last_period_id + 1
+        st.session_state.last_period_id = new_id
+        st.session_state.active_periods.append(new_id)
 
+    periods_to_remove = []
 
-    edited_df = st.data_editor(
-        st.session_state.sospensioni_df,  
-        column_config={
-            "Inizio": st.column_config.DateColumn("Data Inizio", format="DD/MM/YYYY"),
-            "Fine": st.column_config.DateColumn("Data Fine", format="DD/MM/YYYY"),
-        },
-        num_rows="dynamic",
-        hide_index=True,
-        key="sospensioni_manuali"
-    )
-    # Salva le modifiche nel session_state
-    st.session_state.sospensioni_df = edited_df
+    # Mostra i campi data per ogni periodo attivo
+    for period_id in st.session_state.active_periods:
+        r_col1, r_col2, r_col3 = st.columns([4, 4, 1])
+        with r_col1:
+            st.date_input("Data Inizio", key=f"start_{period_id}", format="DD/MM/YYYY", value=None)
+        with r_col2:
+            st.date_input("Data Fine", key=f"end_{period_id}", format="DD/MM/YYYY", value=None)
+        with r_col3:
+            # Pulsante per rimuovere il periodo
+            if st.button("❌", key=f"remove_{period_id}"):
+                periods_to_remove.append(period_id)
+
+    # Logica di rimozione (eseguita dopo il rendering)
+    if periods_to_remove:
+        st.session_state.active_periods = [p for p in st.session_state.active_periods if p not in periods_to_remove]
+        # Pulisce i valori rimossi da session_state
+        for p_id in periods_to_remove:
+            if f"start_{p_id}" in st.session_state: del st.session_state[f"start_{p_id}"]
+            if f"end_{p_id}" in st.session_state: del st.session_state[f"end_{p_id}"]
+        st.rerun()
+
 
 # --- LOGICA DI CALCOLO ---
 if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
@@ -209,30 +230,23 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
 
     giorni_sosp = 0
     
-    # --- CORREZIONE: Gestione migliorata dei periodi manuali ---
+    # --- NUOVA LOGICA: Legge i dati dai widget st.date_input ---
     manual_days = 0
-    if not edited_df.empty:
-        for idx, row in edited_df.iterrows():
-            d_start = row.get("Inizio")
-            d_end = row.get("Fine")
+    for period_id in st.session_state.active_periods:
+        d_start = st.session_state.get(f"start_{period_id}")
+        d_end = st.session_state.get(f"end_{period_id}")
             
-            # Controlla se le date sono valide
-            if pd.notna(d_start) and pd.notna(d_end):
-                # Converti in oggetti 'date' se sono stringhe o timestamp
-                if not isinstance(d_start, date):
-                    d_start = pd.to_datetime(d_start).date()
-                if not isinstance(d_end, date):
-                    d_end = pd.to_datetime(d_end).date()
-                            
-                if d_end >= d_start:
-                    # Calcolo giorni inclusivo (include sia inizio che fine)
-                    delta = (d_end - d_start).days + 1
-                    manual_days += delta
-                    logs.append("Sosp. Manuale {} - {}: {} giorni".format(
-                        d_start.strftime('%d/%m/%Y'), 
-                        d_end.strftime('%d/%m/%Y'), 
-                        delta
-                    ))
+        # Controlla se le date sono valide (non None)
+        if d_start and d_end:
+            if d_end >= d_start:
+                # Calcolo giorni inclusivo (include sia inizio che fine)
+                delta = (d_end - d_start).days + 1
+                manual_days += delta
+                logs.append("Sosp. Manuale {} - {}: {} giorni".format(
+                    d_start.strftime('%d/%m/%Y'), 
+                    d_end.strftime('%d/%m/%Y'), 
+                    delta
+                ))
     
     giorni_sosp += manual_days
     
