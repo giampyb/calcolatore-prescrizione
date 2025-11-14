@@ -177,7 +177,7 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
     giorni_sosp += manual_days
     
     if is_covid: 
-        giorni_sosp += 64
+        g_sosp += 64
         logs.append("Sospensione COVID: +64 giorni")
     
     if orlando_days > 0:
