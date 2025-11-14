@@ -1,4 +1,4 @@
-import streamlit as st
+streamlit as st
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 import math
@@ -47,14 +47,31 @@ st.markdown("""
         background-color: #F5F5DC !important; /* Beige */
     }
 
-    /* Sfondo BIANCO per i widget di input */
+    /* Sfondo BIANCO e Testo NERO per i widget di input */
     .stNumberInput input, 
     .stDateInput input, 
     .stSelectbox div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important; /* Bianco */
+        color: #000000 !important; /* --- TESTO NERO --- */
     }
     div[data-baseweb="select"] > div {
         background-color: white !important;
+        color: #000000 !important; /* --- TESTO NERO --- */
+    }
+
+    /* --- CORREZIONE: Stile per st.data_editor --- */
+    [data-testid="stDataEditor"] {
+        background-color: #FFFFFF !important; /* Sfondo bianco per la tabella */
+    }
+    /* Testo nero per le celle della tabella */
+    [data-testid="stDataEditor"] .rdg-cell {
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
+    }
+    /* Testo nero per l'input di una cella in modifica */
+    [data-testid="stDataEditor"] input {
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -125,12 +142,12 @@ with sosp_col1:
 with sosp_col2:
     st.write("Periodi Manuali (Aggiungi righe)")
     
-    # --- CORREZIONE: Inizializzazione corretta con DataFrame pandas ---
+    # --- CORREZIONE BUG CALENDARIO: Inizializza un DataFrame vuoto ma CON I TIPI CORRETTI ---
     if 'sospensioni_df' not in st.session_state:
-        st.session_state.sospensioni_df = pd.DataFrame({
-            "Inizio": pd.Series(dtype='datetime64[ns]'),  # <-- CORRETTO
-            "Fine": pd.Series(dtype='datetime64[ns]')    # <-- CORRETTO
-        })
+        st.session_state.sospensioni_df = pd.DataFrame(
+            columns=["Inizio", "Fine"]
+        ).astype({"Inizio": "datetime64[ns]", "Fine": "datetime64[ns]"})
+
 
     edited_df = st.data_editor(
         st.session_state.sospensioni_df,  
