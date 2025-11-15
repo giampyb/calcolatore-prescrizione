@@ -18,6 +18,27 @@ def mesi_in_anni_mesi(tot_mesi):
     except Exception:
         return ""
 
+# --- NUOVA FUNZIONE HELPER PER GIORNI (BASE 30) ---
+def giorni_in_mesi_giorni(tot_giorni):
+    """Converte giorni (base 30) in 'X mesi e Y giorni' (arr. per difetto)."""
+    try:
+        tot_giorni = int(tot_giorni)
+        mesi = tot_giorni // 30
+        giorni = tot_giorni % 30
+        
+        if mesi > 0:
+            anni = mesi // 12
+            mesi_rimanenti = mesi % 12
+            if anni > 0:
+                return f"{anni} {'anno' if anni == 1 else 'anni'}, {mesi_rimanenti} {'mese' if mesi_rimanenti == 1 else 'mesi'} e {giorni} {'giorno' if giorni == 1 else 'giorni'}"
+            else:
+                 return f"{mesi} {'mese' if mesi == 1 else 'mesi'} e {giorni} {'giorno' if giorni == 1 else 'giorni'}"
+        else:
+            return f"{giorni} {'giorno' if giorni == 1 else 'giorni'}"
+    except Exception:
+        return ""
+
+
 # --- Configurazione Pagina ---
 st.set_page_config(
     page_title="Calcolatore Prescrizione",
@@ -230,41 +251,45 @@ with sosp_col2:
         st.rerun()
 
 
-# --- LOGICA DI CALCOLO ---
+# --- LOGICA DI CALCOLO (MODIFICATA PER GIORNI) ---
 if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
     
     logs = []
     
     pena_base_mesi = (pena_anni * 12) + pena_mesi
-    logs.append(f"Pena edittale base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)})")
+    # --- CONVERSIONE IN GIORNI (BASE 30) ---
+    pena_base_giorni = pena_base_mesi * 30
+    logs.append(f"Pena edittale base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)}) -> <b>{pena_base_giorni} giorni</b> (base 30)")
 
     if cap_val == 1.5:
-        aumento = math.ceil(pena_base_mesi * 0.5)
-        pena_base_mesi += aumento
-        logs.append(f"Aumento Recidiva (+1/2) su base: +{aumento} mesi -> Nuova base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)})")
+        aumento_giorni = math.floor(pena_base_giorni * 0.5) # Arrotonda per difetto
+        pena_base_giorni += aumento_giorni
+        logs.append(f"Aumento Recidiva (+1/2) su base: +{aumento_giorni} giorni -> Nuova base: <b>{pena_base_giorni} giorni</b> ({giorni_in_mesi_giorni(pena_base_giorni)})")
     elif 1.6 < cap_val < 1.7:
-        aumento = math.ceil(pena_base_mesi * (2/3))
-        pena_base_mesi += aumento
-        logs.append(f"Aumento Recidiva (+2/3) su base: +{aumento} mesi -> Nuova base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)})")
+        aumento_giorni = math.floor(pena_base_giorni * (2/3)) # Arrotonda per difetto
+        pena_base_giorni += aumento_giorni
+        logs.append(f"Aumento Recidiva (+2/3) su base: +{aumento_giorni} giorni -> Nuova base: <b>{pena_base_giorni} giorni</b> ({giorni_in_mesi_giorni(pena_base_giorni)})")
     elif cap_val == 2.0:
-        aumento = pena_base_mesi
-        pena_base_mesi += aumento
-        logs.append(f"Aumento Abitualità (+100%) su base: +{aumento} mesi -> Nuova base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)})")
+        aumento_giorni = pena_base_giorni
+        pena_base_giorni += aumento_giorni
+        logs.append(f"Aumento Abitualità (+100%) su base: +{aumento_giorni} giorni -> Nuova base: <b>{pena_base_giorni} giorni</b> ({giorni_in_mesi_giorni(pena_base_giorni)})")
 
     if is_tentato:
-        riduzione = math.ceil(pena_base_mesi / 3)
-        pena_base_mesi -= riduzione
-        logs.append(f"Riduzione Tentativo (-1/3): -{riduzione} mesi -> Nuova base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)})")
+        riduzione_giorni = math.floor(pena_base_giorni / 3) # Arrotonda per difetto
+        pena_base_giorni -= riduzione_giorni
+        logs.append(f"Riduzione Tentativo (-1/3): -{riduzione_giorni} giorni -> Nuova base: <b>{pena_base_giorni} giorni</b> ({giorni_in_mesi_giorni(pena_base_giorni)})")
 
-    term_ordinario = pena_base_mesi
+    term_ordinario_giorni = pena_base_giorni
     minimo_mesi = minimo_edittale * 12
-    if term_ordinario < minimo_mesi:
-        term_ordinario = minimo_mesi
-        logs.append(f"Tempo Minimo di Prescrizione ({minimo_edittale} anni): Termine portato a {term_ordinario} mesi ({mesi_in_anni_mesi(term_ordinario)})")
+    minimo_giorni = minimo_mesi * 30 # Minimo in giorni
+    
+    if term_ordinario_giorni < minimo_giorni:
+        term_ordinario_giorni = minimo_giorni
+        logs.append(f"Tempo Minimo di Prescrizione ({minimo_edittale} anni): Termine portato a <b>{term_ordinario_giorni} giorni</b> ({giorni_in_mesi_giorni(term_ordinario_giorni)})")
     
     if is_raddoppio:
-        term_ordinario *= 2
-        logs.append(f"Raddoppio Termini: {term_ordinario} mesi ({mesi_in_anni_mesi(term_ordinario)})")
+        term_ordinario_giorni *= 2
+        logs.append(f"Raddoppio Termini: <b>{term_ordinario_giorni} giorni</b> ({giorni_in_mesi_giorni(term_ordinario_giorni)})")
 
     giorni_sosp = 0
     
@@ -292,14 +317,16 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
     logs.append(f"<b>TOTALE SOSPENSIONI: {giorni_sosp} giorni</b>")
 
     start_ord = data_interruzione if (has_interruzione and data_interruzione) else data_commissione
-    data_ord_base = start_ord + relativedelta(months=term_ordinario)
+    # --- CALCOLO DATA CON GIORNI ---
+    data_ord_base = start_ord + timedelta(days=term_ordinario_giorni)
     data_ord_finale = data_ord_base + timedelta(days=giorni_sosp)
     
-    term_max_mesi = math.ceil(term_ordinario * cap_val)
+    term_max_giorni = math.floor(term_ordinario_giorni * cap_val) # Arrotonda per difetto
     
-    logs.append(f"Calcolo termine massimo (Art. 161): {term_ordinario} mesi * {cap_val:.2f} ({cap_label}) = {term_max_mesi} mesi ({mesi_in_anni_mesi(term_max_mesi)})")
+    logs.append(f"Calcolo termine massimo (Art. 161): {term_ordinario_giorni} giorni * {cap_val:.2f} ({cap_label}) = <b>{term_max_giorni} giorni</b> ({giorni_in_mesi_giorni(term_max_giorni)})")
 
-    data_max_base = data_commissione + relativedelta(months=term_max_mesi)
+    # --- CALCOLO DATA CON GIORNI ---
+    data_max_base = data_commissione + timedelta(days=term_max_giorni)
     data_max_finale = data_max_base + timedelta(days=giorni_sosp)
 
     st.markdown("---")
@@ -316,7 +343,7 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
         
     with res_col2:
         st.markdown(f"""
-        <div class="box-massima">
+        <div class_name="box-massima">
             <span class="label-result">Prescrizione Massima</span>
             <span class="big-date">{data_max_finale.strftime('%d/%m/%Y')}</span>
             <small>(da {data_commissione.strftime('%d/%m/%Y')})</small>
