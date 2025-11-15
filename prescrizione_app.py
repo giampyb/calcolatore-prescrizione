@@ -108,15 +108,15 @@ st.markdown("""
         border: 1px solid #AAAAAA !important;
     }
     
-    /* 3. Imposta il quadratino (quando SPUNTATO) a ROSSO */
+    /* 3. Imposta il quadratino (quando SPUNTATO) a ROSA CHIARO */
     div[data-testid="stCheckbox"] input:checked + div {
-        background-color: #D32F2F !important; /* Rosso */
-        border-color: #B71C1C !important;
+        background-color: #FFB6C1 !important; /* Rosa Chiaro (sostituisce il rosso) */
+        border-color: #E7A1B0 !important; /* Bordo rosa più scuro */
     }
     
-    /* 4. Rende il segno di spunta bianco (visibile sul rosso) */
+    /* 4. Rende il segno di spunta NERO (visibile sul rosa chiaro) */
     div[data-testid="stCheckbox"] input:checked + div svg path {
-        stroke: white !important;
+        stroke: #000000 !important; /* Nero (era bianco) */
     }
     /* --- FINE MODIFICA CHECKBOX --- */
 
@@ -236,7 +236,6 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
     logs = []
     
     pena_base_mesi = (pena_anni * 12) + pena_mesi
-    # MODIFICA 1: Aggiunto (anni e mesi)
     logs.append(f"Pena edittale base: {pena_base_mesi} mesi ({mesi_in_anni_mesi(pena_base_mesi)})")
 
     if cap_val == 1.5:
@@ -298,7 +297,6 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
     
     term_max_mesi = math.ceil(term_ordinario * cap_val)
     
-    # MODIFICA 2: Aggiunto log per calcolo termine massimo
     logs.append(f"Calcolo termine massimo (Art. 161): {term_ordinario} mesi * {cap_val:.2f} ({cap_label}) = {term_max_mesi} mesi ({mesi_in_anni_mesi(term_max_mesi)})")
 
     data_max_base = data_commissione + relativedelta(months=term_max_mesi)
