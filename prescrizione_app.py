@@ -54,7 +54,9 @@ st.markdown("""
         position: fixed; left: 0; bottom: 0; width: 100%;
         background-color: #f0f2f6; color: #000000; /* TESTO NERO */
         text-align: center;
-        padding: 10px; font-size: 12px; border-top: 1px solid #ccc;
+        padding: 10px; 
+        font-size: 14px; /* --- Carattere leggermente più grande --- */
+        border-top: 1px solid #ccc;
     }
     
     /* Stili per tema chiaro (rimossi quelli dark) */
@@ -148,6 +150,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Titolo aggiornato senza "(BETA)"
 st.title("⚖️ Calcolatore Prescrizione Reati")
 
 # --- Inizializza session_state per sospensioni ---
@@ -185,6 +188,8 @@ c1, c2, c3 = st.columns(3)
 with c1:
     is_tentato = st.checkbox("Reato Tentato (Art. 56)")
     is_raddoppio = st.checkbox("Raddoppio Termini")
+    # --- Checkbox per Art. 63 c. 4 ---
+    is_art_63 = st.checkbox("Concorso Aggravanti (Art. 63 c. 4)")
 with c2:
     tipo_reato = st.selectbox("Tipo Reato (Minimo)", ["Delitto (Min 6 anni)", "Contravvenzione (Min 4 anni)"])
     minimo_edittale = 6 if "Delitto" in tipo_reato else 4
@@ -275,13 +280,16 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
         pena_base_mesi_float += aumento_float
         logs.append(f"Aumento Abitualità (+100%) su base: +{format_hybrid_time(aumento_float)} -> Nuova base: <b>{format_hybrid_time(pena_base_mesi_float)}</b>")
 
+    # --- Passo 2.5 per Art. 63 c. 4 ---
+    if is_art_63:
+        aumento_art_63_float = pena_base_mesi_float / 3.0
+        pena_base_mesi_float += aumento_art_63_float
+        logs.append(f"Aumento Concorso Agg. (Art. 63 c. 4): +1/3 (+{format_hybrid_time(aumento_art_63_float)}) -> Nuova base: <b>{format_hybrid_time(pena_base_mesi_float)}</b>")
+
     # 3. Tentativo (calcolo su float)
     if is_tentato:
         riduzione_float = pena_base_mesi_float / 3.0
         pena_base_mesi_float -= riduzione_float
-        # Esempio utente: 4 mesi (120gg) - 1/3 -> 2 mesi e 20gg (80gg)
-        # 4.0 - (4.0/3.0) = 4.0 - 1.333... = 2.666...
-        # format_hybrid_time(2.666...) -> 2 mesi e 20 giorni. Corretto.
         logs.append(f"Riduzione Tentativo (-1/3): -{format_hybrid_time(riduzione_float)} -> Nuova base: <b>{format_hybrid_time(pena_base_mesi_float)}</b>")
 
     # 4. Minimo Edittale (confronto float)
@@ -368,7 +376,7 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
         <div class_name="box-massima">
             <span class="label-result">Prescrizione Massima</span>
             <span class="big-date">{data_max_finale.strftime('%d/%m/%Y')}</span>
-            <small>(da {data_commissione.strftime('%d/%m/%Y')})</small>
+            <small>(da {data_commissione.strftime('%d/%m/%Y')})</Ssmall>
         </div>
         """, unsafe_allow_html=True)
 
@@ -376,4 +384,5 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
         for log in logs:
             st.markdown(f"- {log}", unsafe_allow_html=True)
 
-st.markdown('<div class="footer-disclaimer">App realizzata dal dr. Giampiero Borraccia con Gemini AI</div>', unsafe_allow_html=True)
+# --- Testo Footer aggiornato ---
+st.markdown('<div class="footer-disclaimer">App realizzata con Gemini AI da Giampiero Borraccia (magistrato)</div>', unsafe_allow_html=True)
