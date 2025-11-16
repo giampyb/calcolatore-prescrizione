@@ -147,6 +147,27 @@ st.markdown("""
     .st-emotion-cache-1cflm81 {
         padding-top: 29px;
     }
+
+    /* --- FIX 1: Stile Pulsante "Info" (Popover Trigger) --- */
+    button[data-testid="stPopoverTrigger"] {
+        background-color: #FFFFFF !important; /* Sfondo bianco */
+        color: #000000 !important;        /* Testo nero */
+        border: 1px solid #CCCCCC !important; /* Bordo grigio chiaro */
+        width: 100%; /* Assicura che sia orizzontale */
+    }
+    
+    /* --- FIX 2: Sfondo Chiaro per il Contenuto del Popover --- */
+    div[data-testid="stPopoverContent"] {
+        background-color: #FFFFFF !important; /* Sfondo bianco */
+        color: #000000 !important;
+    }
+    /* Forza il testo nero anche dentro il markdown del popover */
+    div[data-testid="stPopoverContent"] p, 
+    div[data-testid="stPopoverContent"] li,
+    div[data-testid="stPopoverContent"] strong {
+        color: #000000 !important;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
@@ -432,10 +453,10 @@ if st.button("CALCOLA PRESCRIZIONE", use_container_width=True, type="primary"):
         
     with res_col2:
         st.markdown(f"""
-        <div class_name="box-massima">
+        <div class="box-massima">
             <span class="label-result">Prescrizione Massima</span>
             <span class="big-date">{data_max_finale.strftime('%d/%m/%Y')}</span>
-            <small>(da {data_commissione.strftime('%d/%m/%Y')})</Ssmall>
+            <small>(da {data_commissione.strftime('%d/%m/%Y')})</small>
         </div>
         """, unsafe_allow_html=True)
 
